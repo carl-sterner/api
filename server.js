@@ -4,6 +4,8 @@ const db = require('./database');
 const app = express();
 app.use(express.json());
 
+const PORT = 3000;
+
 app.get('/', (req, res) => {
   res.send(`
     <h1>Dokumentation av det här apiet</h1>
@@ -31,7 +33,25 @@ app.get('/users/:id', (req, res) => {
   res.status(200).json(user);
 });
 
-const PORT = 3000;
+app.post('/users', (req, res) => {
+  const { username, first_name, last_name } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: 'username är obligatoriskt' });
+  }
+
+  try {
+    const result = db.prepare(
+      'INSERT INTO users (username, first_name, last_name) VALUES (?, ?, ?)'
+    ).run(username, first_name, last_name);
+
+    const newUser = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(400).json({ error: 'username måste vara unikt' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servern körs på http://localhost:${PORT}`);
 });

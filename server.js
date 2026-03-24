@@ -52,6 +52,32 @@ app.post('/users', (req, res) => {
   }
 });
 
+app.put('/users/:id', (req, res) => {
+  const { username, first_name, last_name } = req.body;
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({ error: 'Användaren hittades inte' });
+  }
+
+  try {
+    db.prepare(
+      'UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE id = ?'
+    ).run(
+      username ?? user.username,
+      first_name ?? user.first_name,
+      last_name ?? user.last_name,
+      req.params.id
+    );
+
+    const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(400).json({ error: 'username måste vara unikt' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Servern körs på http://localhost:${PORT}`);
 });
